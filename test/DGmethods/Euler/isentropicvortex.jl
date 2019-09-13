@@ -6,6 +6,8 @@ using CLIMA.DGmethods.NumericalFluxes: Rusanov, CentralGradPenalty,
                                        CentralNumericalFluxDiffusive
 using CLIMA.ODESolvers: solve!, gettime
 using CLIMA.LowStorageRungeKuttaMethod: LSRK54CarpenterKennedy
+using CLIMA.DifferentialEquationsMethods: DifferentialEquationsMethod
+using DifferentialEquations: CarpenterKennedy2N54
 using CLIMA.VTK: writevtk, writepvtu
 using CLIMA.GenericCallbacks: EveryXWallTimeSeconds, EveryXSimulationSteps
 using CLIMA.MPIStateArrays: euclidean_distance
@@ -140,7 +142,8 @@ function run(mpicomm, polynomialorder, numelems, setup, ArrayType, DFloat, dims,
   dt = timeend / nsteps
 
   Q = init_ode_state(dg, param, DFloat(0))
-  lsrk = LSRK54CarpenterKennedy(dg, Q; dt = dt, t0 = 0)
+  #lsrk = LSRK54CarpenterKennedy(dg, Q; dt = dt, t0 = 0)
+  lsrk = DifferentialEquationsMethod(CarpenterKennedy2N54(williamson_condition=false), dg, Q; dt = dt, t0 = 0)
 
   eng0 = norm(Q)
   dims == 2 && (numelems = (numelems..., 0))
@@ -186,6 +189,7 @@ function run(mpicomm, polynomialorder, numelems, setup, ArrayType, DFloat, dims,
     end
     callbacks = (callbacks..., cbvtk)
   end
+  callbacks = tuple()
 
   solve!(Q, lsrk, param; timeend=timeend, callbacks=callbacks)
 
