@@ -260,6 +260,7 @@
   \SDi{S_{\epsilon\delta}}^{\phi\psi}
 + \SDi{S_{\text{x-grad flux}}}^{\phi\psi}
 + \SDi{S_{\text{turb-transp}}}^{\phi\psi}
++ \SDi{S_{\text{dissip}}}^{\phi\psi}
 + \SDi{S_{\text{MP-MSS}}}^{\phi\psi}.
 \quad \phi\psi \in [\qt\qt, \eint\eint, \eint \qt].
 \end{align}\]</div><h3><a class="nav-anchor" id="Source-term-definitions-3" href="#Source-term-definitions-3">Source term definitions</a></h3><div>\[\begin{align}
@@ -328,7 +329,9 @@ c_K &amp; = 0.1 \\
 \Cvm &amp;= (1 - \SDi{\qt}) \Cv{d} + \SDi{\qv} \Cv{v} + \SDi{\ql} \Cv{l} + \SDi{\qi} \Cv{i} \\
 \Cpm &amp;= (1 - \SDi{\qt}) \Cp{d} + \SDi{\qt} \Cp{v} \\
 \end{align}\]</div><h2><a class="nav-anchor" id="Latent-heat-1" href="#Latent-heat-1">Latent heat</a></h2><div>\[\begin{align}
-\LatentHeatV{T} &amp;= \RefLHv + \Cp{v} - \Cp{l} (T - \TTriple) \\
+\LatentHeatV{T} &amp;= \RefLHv + (\Cp{v} - \Cp{l}) (T - \TTriple) \\
+\LatentHeatS{T} &amp;= \RefLHs + (\Cp{v} - \Cp{i}) (T - \TTriple) \\
+\LatentHeatF{T} &amp;= \RefLHf + (\Cp{l} - \Cp{i}) (T - \TTriple) \\
 \end{align}\]</div><h2><a class="nav-anchor" id="Exner-functions-1" href="#Exner-functions-1">Exner functions</a></h2><div>\[\begin{align}
 \ExnerD(\pRef{})    = \left(\frac{\pRef{}}{\PTilde{}} \right)^{\Rd/\Cp{d}} \\
 \ExnerM(\pRef{}, \PhasePartition) = \left(\frac{\pRef{}}{\PTilde{}} \right)^{\Rm/\Cpm} \\
@@ -362,7 +365,7 @@ r_{con} &amp; = \frac{\qt+\ql}{1 - \qt} \\
 r_{vap} &amp; = \frac{\qt-\ql    - \qi}{1 - \qt} \\
 \end{align}\]</div><h2><a class="nav-anchor" id="Potential-temperatures-1" href="#Potential-temperatures-1">Potential temperatures</a></h2><p>Fix: which virtual potential temperature is used</p><div>\[\begin{align}\label{eq:Theta}
 \ThetaDry    &amp; = T/\ExnerD \\
-\ThetaLiqIce &amp; = \ThetaDry (1 - (\RefLHv \ql + \RefLHs \qi))/(\Cpm T) \\
+\ThetaLiqIce &amp; = \ThetaDry (1 - (\RefLHv \ql + \RefLHs \qi)/(\Cpm T)) \\
 \ThetaVirt   &amp; = \ThetaDry (1 - r_{con} + 0.61 r_{vap}) \\
 \ThetaVirt   &amp; = \theta \left(1 + 0.61 \qr - \ql \right) \\
 \ThetaRho    &amp; = T \Rm/\ExnerD \\
