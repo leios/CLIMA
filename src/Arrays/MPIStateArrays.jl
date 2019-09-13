@@ -94,6 +94,12 @@ end
 
 Base.fill!(Q::MPIStateArray, x) = fill!(Q.Q, x)
 
+function Base.zero(Q::MPIStateArray)
+  Q0 = similar(Q)
+  fill!(Q0, zero(eltype(Q0)))
+  Q0
+end
+
 """
    MPIStateArray{S, T, DA}(mpicomm, numelem; realelems=1:numelem,
                            ghostelems=numelem:numelem-1,
