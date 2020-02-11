@@ -1,6 +1,7 @@
 using Test
 using CLIMA
 using CLIMA.RootSolvers
+using CuArrays
 
 CLIMA.init()
 
@@ -97,6 +98,7 @@ if CLIMA.array_type() != Array
       X_roots = map(x->x.root, sol)
       err = map(x->x.err, sol)
       iter_performed = map(x->x.iter_performed, sol)
+
       @test all(converged)
       @test eltype(X_roots) == eltype(X0)
       @test all(X_roots .≈ 100)

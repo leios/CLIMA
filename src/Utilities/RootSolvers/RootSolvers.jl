@@ -18,6 +18,9 @@ converged = sol.converged
 """
 module RootSolvers
 
+# I do not know where to put this...
+using StaticArrays
+
 export find_zero, SecantMethod, RegulaFalsiMethod, NewtonsMethodAD, NewtonsMethod
 export CompactSolution, VerboseSolution
 
@@ -46,16 +49,28 @@ abstract type AbstractSolutionResults{AbstractFloat} end
 struct VerboseSolutionResults{FT} <: AbstractSolutionResults{FT}
   "solution ``x^*`` of the root of the equation ``f(x^*) = 0``"
   root::FT
+
   "indicates convergence"
   converged::Bool
+
   "error of the root of the equation ``f(x^*) = 0``"
   err::FT
+
   "number of iterations performed"
   iter_performed::Int
-  "solution per iteration"
-  root_history::Vector{FT}
+
+  "solution per iteration, note: must be SVector for GPU compilation"
+  "not entirely sure the best way to store these"
+  root_history::SArray
+
   "error of the root of the equation ``f(x^*) = 0`` per iteration"
-  err_history::Vector{FT}
+  err_history::SArray
+
+  VerboseSolutionResults(root, converged, err, iter_performed,
+                         root_history, err_history) = 
+    new{typeof(root)}(root, converged, err, iter_performed,
+                      SArray{Tuple{length(root_history)}}(root_history),
+                      SArray{Tuple{length(err_history)}}(err_history))
 end
 SolutionResults(soltype::VerboseSolution, args...) = VerboseSolutionResults(args...)
 
@@ -70,6 +85,7 @@ struct CompactSolution <: SolutionType end
 struct CompactSolutionResults{FT} <: AbstractSolutionResults{FT}
   "solution ``x^*`` of the root of the equation ``f(x^*) = 0``"
   root::FT
+
   "indicates convergence"
   converged::Bool
 end
