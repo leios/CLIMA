@@ -276,6 +276,35 @@ function nodal_update_aux!(f!, dg::DGModel, m::BalanceLaw, Q::MPIStateArray,
   end
 end
 
+function copy_stack_lowdim!(dg::DGModel, m::BalanceLaw,
+                            auxstate::MPIStateArray,
+                            Qlowdim::MPIStateArray, fldout, fldin)
+
+  device = typeof(auxstate.data) <: Array ? CPU() : CUDA()
+
+  grid = dg.grid
+  topology = grid.topology
+
+  dim = dimensionality(grid)
+  N = polynomialorder(grid)
+  Nq = N + 1
+  Nqk = dim == 2 ? 1 : Nq
+
+  DFloat = eltype(auxstate)
+
+  vgeo = grid.vgeo
+  polyorder = polynomialorder(dg.grid)
+
+  nelem = length(topology.elems)
+  nvertelem = topology.stacksize
+  nhorzelem = div(nelem, nvertelem)
+
+  @launch(device, threads=(Nq, Nqk, 1), blocks=nhorzelem,
+          knl_copy_lowdim!(Val(dim), Val(polyorder), Val(nvertelem),
+                           auxstate.data, Qlowdim.data, 1:nhorzelem, Val(fldout),
+                           Val(fldin)))
+end
+
 function copy_stack_field_down!(dg::DGModel, m::BalanceLaw,
                                 auxstate::MPIStateArray, fldout, fldin)
 

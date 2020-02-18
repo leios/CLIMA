@@ -1270,6 +1270,39 @@ function knl_reverse_indefinite_stack_integral!(::Val{dim}, ::Val{N},
 end
 
 # TODO: Generalize to more than one field?
+function knl_copy_lowdim!(::Val{dim}, ::Val{N}, ::Val{nvertelem},
+                          auxstate, Qlowdim, elems, ::Val{fldout},
+                          ::Val{fldin}) where {dim, N, nvertelem,
+                                               fldin, fldout}
+  DFloat = eltype(auxstate)
+
+  Nq = N + 1
+  Nqj = dim == 2 ? 1 : Nq
+
+  # note that k is the second not 4th index (since this is scratch memory and k
+  # needs to be persistent across threads)
+  @inbounds @loop for eh in (elems; blockIdx().x)
+    # Initialize the constant state at zero
+    @loop for j in (1:Nqj; threadIdx().y)
+      @loop for i in (1:Nq; threadIdx().x)
+        ij = i + Nq * (j-1)
+        val = Qlowdim[ij, fldin, eh]
+
+        # Loop up the stack of elements
+        for ev = 1:nvertelem
+          e = ev + (eh - 1) * nvertelem
+          @unroll for k in 1:Nq
+            ijk = i + Nq * ((j-1) + Nqj * (k-1))
+            auxstate[ijk, fldout, e] = val
+          end
+        end
+      end
+    end
+  end
+  nothing
+end
+
+# TODO: Generalize to more than one field?
 function knl_copy_stack_field_down!(::Val{dim}, ::Val{N}, ::Val{nvertelem},
                                     auxstate, elems, ::Val{fldout},
                                     ::Val{fldin}) where {dim, N, nvertelem,
