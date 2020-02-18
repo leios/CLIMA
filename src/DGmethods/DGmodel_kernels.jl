@@ -1271,8 +1271,8 @@ end
 
 # TODO: Generalize to more than one field?
 function knl_copy_stack_field_down!(::Val{dim}, ::Val{N}, ::Val{nvertelem},
-                                    auxstate, elems, ::Val{fldin},
-                                    ::Val{fldout}) where {dim, N, nvertelem,
+                                    auxstate, elems, ::Val{fldout},
+                                    ::Val{fldin}) where {dim, N, nvertelem,
                                                           fldin, fldout}
   DFloat = eltype(auxstate)
 

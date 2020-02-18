@@ -277,7 +277,7 @@ function nodal_update_aux!(f!, dg::DGModel, m::BalanceLaw, Q::MPIStateArray,
 end
 
 function copy_stack_field_down!(dg::DGModel, m::BalanceLaw,
-                                auxstate::MPIStateArray, fldin, fldout)
+                                auxstate::MPIStateArray, fldout, fldin)
 
   device = typeof(auxstate.data) <: Array ? CPU() : CUDA()
 
@@ -301,8 +301,8 @@ function copy_stack_field_down!(dg::DGModel, m::BalanceLaw,
 
   @launch(device, threads=(Nq, Nqk, 1), blocks=nhorzelem,
           knl_copy_stack_field_down!(Val(dim), Val(polyorder), Val(nvertelem),
-                                     auxstate.data, 1:nhorzelem, Val(fldin),
-                                     Val(fldout)))
+                                     auxstate.data, 1:nhorzelem, Val(fldout),
+                                     Val(fldin)))
 end
 
 function MPIStateArrays.MPIStateArray(dg::DGModel, commtag=888)
