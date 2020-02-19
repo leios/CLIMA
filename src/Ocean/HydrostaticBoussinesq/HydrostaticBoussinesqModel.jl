@@ -117,7 +117,6 @@ end
 function vars_state(m::HBModel, T)
   @vars begin
     u::SVector{2, T}
-    η::T # real a 2-D variable TODO: should be 2D
     θ::T
   end
 end
@@ -129,12 +128,12 @@ function vars_aux(m::HBModel, T)
     pkin_reverse::T # ∫(-αᵀ θ) # TODO: remove me after better integral interface
     w_reverse::T               # TODO: remove me after better integral interface
     pkin::T         # ∫(-αᵀ θ)
-    wz0::T          # w at z=0
     θʳ::T           # SST given    # TODO: Should be 2D
     f::T            # coriolis
     τ::T            # wind stress  # TODO: Should be 2D
     ν::SVector{3, T}
     κ::SVector{3, T}
+    η::T  
   end
 end
 
@@ -163,7 +162,7 @@ end
                                     A::Vars, t::Real)
   @inbounds begin
     u = Q.u # Horizontal components of velocity
-    η = Q.η
+    η = A.η
     θ = Q.θ
     w = A.w   # vertical velocity
     pkin = A.pkin
@@ -191,37 +190,6 @@ end
 
 @inline wavespeed(m::HBModel, n⁻, _...) = abs(SVector(m.cʰ, m.cʰ, m.cᶻ)' * n⁻)
 
-# We want not have jump penalties on η (since not a flux variable)
-function update_penalty!(::Rusanov, ::HBModel, n⁻, λ, ΔQ::Vars,
-                         Q⁻, A⁻, Q⁺, A⁺, t)
-  ΔQ.η = -0
-
-  #=
-  θ⁻ = Q⁻.θ
-  u⁻ = Q⁻.u
-  w⁻ = A⁻.w
-  @inbounds v⁻ = @SVector [u⁻[1], u⁻[2], w⁻]
-  n̂_v⁻ = n⁻∘v⁻
-
-  θ⁺ = Q⁺.θ
-  u⁺ = Q⁺.u
-  w⁺ = A⁺.w
-  @inbounds v⁺ = @SVector [u⁺[1], u⁺[2], w⁺]
-  n̂_v⁺ = n⁻∘v⁺
-
-  # max velocity
-  # n̂∘v = (abs(n̂∘v⁺) > abs(n̂∘v⁻) ? n̂∘v⁺ : n̂∘v⁻
-
-  # average velocity
-  n̂_v = (n̂_v⁻ + n̂_v⁺) / 2
-
-  ΔQ.θ = ((n̂_v > 0) ? 1 : -1) * (n̂_v⁻ * θ⁻ - n̂_v⁺ * θ⁺)
-  # ΔQ.θ = abs(n̂_v⁻) * θ⁻ - abs(n̂_v⁺) * θ⁺
-  =#
-
-  return nothing
-end
-
 @inline function flux_diffusive!(m::HBModel, F::Grad, Q::Vars, D::Vars,
                                  A::Vars, t::Real)
   F.u -= Diagonal(A.ν) * D.∇u
@@ -245,17 +213,14 @@ end
   return nothing
 end
 
-@inline function source!(m::HBModel{P}, source::Vars, Q::Vars, A::Vars,
+@inline function source!(m::HBModel{P}, S::Vars, Q::Vars, A::Vars,
                          t::Real) where P
   @inbounds begin
     u = Q.u # Horizontal components of velocity
     f = A.f
-    wz0 = A.wz0
 
     # f × u
-    source.u -= @SVector [-f * u[2], f * u[1]]
-
-    source.η += wz0
+    S.u -= @SVector [-f * u[2], f * u[1]]
   end
 
   return nothing
@@ -278,8 +243,8 @@ function update_aux!(dg::DGModel, m::HBModel, Q::MPIStateArray, t::Real)
   apply!(Q, (1, 2), dg.grid, vert_filter, VerticalDirection())
 
   exp_filter = MD.exp_filter
-  # Q[4] = θ
-  apply!(Q, (4,), dg.grid, exp_filter, VerticalDirection())
+  # Q[3] = θ
+  apply!(Q, (3,), dg.grid, exp_filter, VerticalDirection())
 
   return true
 end
@@ -303,11 +268,6 @@ function update_aux_diffusive!(dg::DGModel, m::HBModel, Q::MPIStateArray, t::Rea
   # compute integrals for w and pkin
   indefinite_stack_integral!(dg, m, Q, A, t) # bottom -> top
   reverse_indefinite_stack_integral!(dg, m, A, t) # top -> bottom
-
-  # project w(z=0) down the stack
-  # Need to be consistent with vars_aux
-  # A[1] = w, A[5] = wz0
-  copy_stack_field_down!(dg, m, A, 1, 5)
 
   return true
 end
@@ -559,5 +519,7 @@ end
 
   return nothing
 end
+
+include("SurfaceModel.jl")
 
 end
