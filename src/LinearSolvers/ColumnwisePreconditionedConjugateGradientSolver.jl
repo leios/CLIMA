@@ -11,14 +11,6 @@ using LazyArrays
 using StaticArrays
 using GPUifyLoops
 
-
-function ColumnwisePreconditionedConjugateGradient(Q::AT; max_iter=size(Q)[3]*size(Q)[5],
-        rtol=eps(eltype(AT)), atol=eps(eltype(AT)), dims=:) where AT
-    # FIXME: Need to revisit this (assuming uniform vertical resolution in each column)
-
-    return ColumnwisePreconditionedConjugateGradient{eltype(Q), eltype(dims)}(rtol, atol, max_iter, dims)
-end
-
 struct ColumnwisePreconditionedConjugateGradient{T, D} <: LS.AbstractIterativeLinearSolver
 
   rtol::T
@@ -35,7 +27,14 @@ struct ColumnwisePreconditionedConjugateGradient{T, D} <: LS.AbstractIterativeLi
   Lp::MArray{T}
 
   dims::D
- 
+
+
+  function ColumnwisePreconditionedConjugateGradient(Q::AT; max_iter=size(Q)[3]*size(Q)[5],
+          rtol=eps(eltype(AT)), atol=eps(eltype(AT)), dims=:) where AT
+      # FIXME: Need to revisit this (assuming uniform vertical resolution in each column)
+      return new{eltype(Q), eltype(dims)}(rtol, atol, max_iter, dims)
+  end
+
 end
 
 function LS.initialize!(linearoperator!, Q, Qrhs,
@@ -47,7 +46,7 @@ end
 
 function LS.doiteration!(linearoperator!, Q, Qrhs,
                          solver::ColumnwisePreconditionedConjugateGradient{M},
-                         args...; applyPC=) where M
+                         args...) where M
 
     rtol = solver.rtol
     atol = solver.atol
@@ -92,6 +91,7 @@ function LS.doiteration!(linearoperator!, Q, Qrhs,
         @. Q += α * p0
         @. r1 = r0 - α * p0
 
+        # TODO: Probably need to perform MPI call for allreduce
         if maximum(norm(r1, 2, false, dims=dims)) < atol
             converged = true
             break
@@ -105,6 +105,9 @@ function LS.doiteration!(linearoperator!, Q, Qrhs,
         @. p0 = z1 + β * p0
         @. z0 = z1
         @. r0 = r1
+
     end
+
+end
 
 end
