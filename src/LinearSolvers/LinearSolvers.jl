@@ -92,6 +92,7 @@ using the `solver` and the initial guess `Q`. After the call `Q` contains the
 solution.  The arguments `args` is passed to `linearoperator!` when it is
 called.
 """
+<<<<<<< HEAD
 function linearsolve!(
     linearoperator!,
     solver::AbstractIterativeLinearSolver,
@@ -100,6 +101,7 @@ function linearsolve!(
     args...;
     max_iters = length(Q),
     cvg = Ref{Bool}(),
+    applyPC = (x,y)
 )
     converged = false
     iters = 0
