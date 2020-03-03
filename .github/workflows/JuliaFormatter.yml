@@ -20,7 +20,7 @@ jobs:
         julia -e '
           using JuliaFormatter
           # https://github.community/t5/GitHub-Actions/GitHub-actions-does-not-print-git-diff/m-p/43824/highlight/true#M5523
-          for filename in readlines(`git diff --name-only --diff-filter=AM origin/master ${{ github.sha }}`)
+          for filename in readlines(`git diff --name-only --diff-filter=AM origin/master`)
               endswith(filename, ".jl") || continue
               format(filename,
                   verbose = true,
