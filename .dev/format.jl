@@ -6,7 +6,7 @@ Pkg.instantiate()
 
 using JuliaFormatter
 
-headbranch = get(ARGS, 1, "master")
+headbranch = get(ARGS, 1, "sb/julia-formatter")
 
 for filename in
     readlines(`git diff --name-only --diff-filter=AM $headbranch...`)
