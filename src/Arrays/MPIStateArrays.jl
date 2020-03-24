@@ -27,7 +27,7 @@ using .CMBuffers
 cpuify(x::AbstractArray) = convert(Array, x)
 cpuify(x::Real) = x
 
-export MPIStateArray, euclidean_distance, weightedsum
+export MPIStateArray, euclidean_distance, weightedsum, sum
 
 """
     MPIStateArray{FT, DATN<:AbstractArray{FT,3}, DAI1, DAV,
@@ -507,6 +507,13 @@ function LinearAlgebra.dot(
     r = MPI.Allreduce(locnorm, MPI.SUM, Q1.mpicomm)
     @toc mpi_dot
     return r
+end
+
+# TODO: Make this general to work across MPI ranks.
+#       Currently, this only needs to sum along the vertical, which should be
+#       all on one device.
+function sum(Q::MPIStateArray; dims=:, op=+, f=f(x)=x)
+    mapreduce((x)->f(x), op, Q, dims=dims)
 end
 
 function euclidean_distance(A::MPIStateArray, B::MPIStateArray)
