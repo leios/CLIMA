@@ -15,6 +15,7 @@ apis = Any[
     "Diagnostics" => Any[
         "List of variables" => "APIs/Diagnostics/Diagnostics.md"
         "Input/Output" => "APIs/Diagnostics/InputOutput.md"
+        "Debug" => "APIs/Diagnostics/Debug/Debug.md"
     ],
     "Numerics" => Any[
         "Meshes" => "APIs/Numerics/Meshes/Mesh.md",

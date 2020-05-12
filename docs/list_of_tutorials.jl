@@ -56,6 +56,7 @@ if generate_tutorials
     tutorials = Any[
         "Atmos" => Any["Dry Idealized GCM" => "generated/Atmos/heldsuarez.md",],
         "Ocean" => Any[],
+        "Diagnostics" => Any["State Check" => "generated/Diagnostics/Debug/StateCheck.md"],
         "Numerics" => Any[
             "LinearSolvers" => Any["Conjugate Gradient" => "generated/Numerics/LinearSolvers/cg.md",],
             "Contributing" => Any["Notes on Literate" => "generated/literate_markdown.md",],
