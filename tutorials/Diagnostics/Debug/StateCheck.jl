@@ -43,18 +43,36 @@ using ClimateMachine.VariableTemplates
 using ClimateMachine.MPIStateArrays
 using ClimateMachine.StateCheck
 MPI.Init()
-T=Float64
+T = Float64
 
 # Define some dummy vector and tensor abstract variables with associated types
 # and dimensions
-F1=@vars begin; ν∇u::SMatrix{3, 2, T, 6}; κ∇θ::SVector{3, T}; end
-F2=@vars begin; u::SVector{2, T}; θ::SVector{1, T}; end
+F1 = @vars begin
+    ν∇u::SMatrix{3, 2, T, 6}
+    κ∇θ::SVector{3, T}
+end
+F2 = @vars begin
+    u::SVector{2, T}
+    θ::SVector{1, T}
+end
 nothing # hide
 
 # Create ```MPIStateArray``` variables with arrays to hold elements of the 
 # vectors and tensors
-Q1=MPIStateArray{Float32,F1}(MPI.COMM_WORLD,ClimateMachine.array_type(),4,9,8)
-Q2=MPIStateArray{Float64,F2}(MPI.COMM_WORLD,ClimateMachine.array_type(),4,6,8)
+Q1 = MPIStateArray{Float32, F1}(
+    MPI.COMM_WORLD,
+    ClimateMachine.array_type(),
+    4,
+    9,
+    8,
+)
+Q2 = MPIStateArray{Float64, F2}(
+    MPI.COMM_WORLD,
+    ClimateMachine.array_type(),
+    4,
+    6,
+    8,
+)
 nothing # hide
 
 # ### Create a call-back
@@ -64,7 +82,11 @@ nothing # hide
 # of ```MPIStateArray``` variables tracked is paired with a label
 # to identify it. The call-back is also given a frequency (in time step numbers) and
 # precision for printing summary tables.
-cb=ClimateMachine.StateCheck.sccreate([(Q1,"My gradients"),(Q2,"My fields")],1; prec=15)
+cb = ClimateMachine.StateCheck.sccreate(
+    [(Q1, "My gradients"), (Q2, "My fields")],
+    1;
+    prec = 15,
+)
 nothing # hide
 
 # ### Invoke the call-back
@@ -77,8 +99,8 @@ typeof(cb)
 # Here, for demonstration purposes, we can invoke
 # the call-back after simply initializing the ```MPIStateArray``` fields to a random
 # set of values e.g.
-Q1.data .= rand( MersenneTwister(0), Float32,  size(Q1.data) )
-Q2.data .= rand( MersenneTwister(0), Float64,  size(Q2.data) )
+Q1.data .= rand(MersenneTwister(0), Float32, size(Q1.data))
+Q2.data .= rand(MersenneTwister(0), Float64, size(Q2.data))
 cb()
 
 # ## 2. Comparing to reference values
@@ -92,7 +114,7 @@ cb()
 # **Step 1.** First a reference array setting program code is generated from the latest
 # state of a given callback e.g.
 
-ClimateMachine.StateCheck.scprintref( cb )
+ClimateMachine.StateCheck.scprintref(cb)
 
 # **Step 2.** Next the array setting program code is executed (see below). At this stage the _parr[]_ array
 # context may be hand edited. The parr[] array sets a target number of decimal places for
@@ -135,7 +157,7 @@ parr = [
 
 # **Step 3.** Finally a call-back stored value can be compared for consistency to with _parr[]_ decimal places 
 
-ClimateMachine.StateCheck.scdocheck( cb, (varr, parr) )
+ClimateMachine.StateCheck.scdocheck(cb, (varr, parr))
 nothing # hide
 
 # In this trivial case the match is guaranteed. The function will return _true_ to the calling
@@ -143,8 +165,8 @@ nothing # hide
 #
 # However we can modify the refernce test values to
 # see the effect of a mismatch e.g.
-varr[1][3]=varr[1][3]*10.
-ClimateMachine.StateCheck.scdocheck( cb, (varr, parr) )
+varr[1][3] = varr[1][3] * 10.0
+ClimateMachine.StateCheck.scdocheck(cb, (varr, parr))
 nothing # hide
 
 # Here the mis-matching field is highlighted with _N(0)_ indicating that the precision
