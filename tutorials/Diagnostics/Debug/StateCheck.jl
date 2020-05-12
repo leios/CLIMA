@@ -101,6 +101,8 @@ ClimateMachine.StateCheck.scprintref( cb )
 # _parr[]_ values requires some sense as to the stability of the particular numerical
 # and physical scenario an experiment represents. In the example below some precision 
 # settings have been hand edited from the default of 16 to illustrate the process.
+
+#! format: off
 varr = [
  [ "My gradients", "ν∇u[1]",  1.34348869323730468750e-04,  9.84732866287231445313e-01,  5.23545503616333007813e-01,  3.08209930764271777814e-01 ],
  [ "My gradients", "ν∇u[2]",  1.16317868232727050781e-01,  9.92088317871093750000e-01,  4.83800649642944335938e-01,  2.83350456014221541157e-01 ],
@@ -129,6 +131,7 @@ parr = [
  [    "My fields",   "u[2]",    16,    16,    16,     0 ],
  [    "My fields",   "θ[1]",    16,    16,    16,     0 ],
 ]
+#! format: on
 
 # **Step 3.** Finally a call-back stored value can be compared for consistency to with _parr[]_ decimal places 
 
