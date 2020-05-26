@@ -20,20 +20,6 @@ struct ExplicitSolverType <: AbstractSolverType
         new(solver_method)
 end
 
-struct IMEXSolverType <: AbstractSolverType
-    linear_model::Type
-    linear_solver::Type
-    solver_method::Function
-    function IMEXSolverType(;
-        # FIXME: this is Atmos-specific
-        linear_model = AtmosAcousticGravityLinearModel,
-        linear_solver = ManyColumnLU,
-        solver_method = ARK2GiraldoKellyConstantinescu,
-    )
-        return new(linear_model, linear_solver, solver_method)
-    end
-end
-
 struct MultirateSolverType <: AbstractSolverType
     linear_model::Type
     solver_method::Type
@@ -58,8 +44,6 @@ struct MultirateSolverType <: AbstractSolverType
     end
 end
 
-DefaultSolverType = IMEXSolverType
-
 abstract type ConfigSpecificInfo end
 struct AtmosLESSpecificInfo <: ConfigSpecificInfo end
 struct AtmosGCMSpecificInfo{FT} <: ConfigSpecificInfo
@@ -69,6 +53,34 @@ struct AtmosGCMSpecificInfo{FT} <: ConfigSpecificInfo
 end
 struct OceanBoxGCMSpecificInfo <: ConfigSpecificInfo end
 struct SingleStackSpecificInfo <: ConfigSpecificInfo end
+
+# IMEX solver configurations / constructors
+struct IMEXSolverType <: AbstractSolverType
+    linear_model::Type
+    linear_solver::Type
+    solver_method::Function
+end
+
+# FIXME: default is Atmos-specific
+function IMEXSolverType(;
+    linear_model = AtmosAcousticGravityLinearModel,
+    linear_solver = ManyColumnLU,
+    solver_method = ARK2GiraldoKellyConstantinescu,
+)
+    return IMEXSolverType(linear_model, linear_solver, solver_method);
+end
+
+# For Ocean Configs
+function IMEXSolverType(::Type{<:OceanBoxGCMSpecificInfo};
+    linear_model = AtmosAcousticGravityLinearModel,
+    linear_solver = BatchedGeneralizedMinimalResidual,
+    solver_method = ARK2GiraldoKellyConstantinescu,
+)
+    return IMEXSolverType(linear_model, linear_solver, solver_method);
+end
+
+
+DefaultSolverType = IMEXSolverType
 
 """
     ClimateMachine.DriverConfiguration
@@ -322,9 +334,7 @@ function OceanBoxGCMConfiguration(
     model::HydrostaticBoussinesqModel;
     FT = Float64,
     array_type = ClimateMachine.array_type(),
-    solver_type = ExplicitSolverType(
-        solver_method = LSRK144NiegemannDiehlBusch,
-    ),
+    solver_type = IMEXSolverType(OceanBoxGCMSpecificInfo),
     mpicomm = MPI.COMM_WORLD,
     numerical_flux_first_order = RusanovNumericalFlux(),
     numerical_flux_second_order = CentralNumericalFluxSecondOrder(),

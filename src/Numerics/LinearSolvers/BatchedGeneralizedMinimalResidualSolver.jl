@@ -1,5 +1,3 @@
-module BatchedGeneralizedMinimalResidualSolver
-
 export BatchedGeneralizedMinimalResidual
 
 using ..LinearSolvers
@@ -765,5 +763,3 @@ function compute_residuals(gmres, i)
     rtol = maximum(gmres.residual[i, :] ./ norm(gmres.R[1, 1, :]))
     return atol, rtol
 end
-
-end # end of module
