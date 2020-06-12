@@ -309,10 +309,10 @@ uuid = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 version = "0.21.0"
 
 [[KernelAbstractions]]
-deps = ["Adapt", "CUDAapi", "CUDAdrv", "CUDAnative", "Cassette", "MacroTools", "StaticArrays"]
-git-tree-sha1 = "4bb6b6bc6db2033647c3d4305a34e93ba75a8f5d"
+deps = ["Adapt", "CUDAapi", "CUDAdrv", "CUDAnative", "Cassette", "MacroTools", "SpecialFunctions", "StaticArrays"]
+git-tree-sha1 = "756321d3186b3af99cafcfb5dc66a38e28d6bc14"
 uuid = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
-version = "0.2.4"
+version = "0.2.6"
 
 [[LLVM]]
 deps = ["CEnum", "Libdl", "Printf", "Unicode"]
@@ -530,9 +530,9 @@ version = "0.6.1"
 
 [[Rmath_jll]]
 deps = ["Libdl", "Pkg"]
-git-tree-sha1 = "1660f8fefbf5ab9c67560513131d4e933012fc4b"
+git-tree-sha1 = "d76185aa1f421306dec73c057aa384bad74188f0"
 uuid = "f50d1b31-88e8-58de-be2c-1cc44531875f"
-version = "0.2.2+0"
+version = "0.2.2+1"
 
 [[RootSolvers]]
 deps = ["DocStringExtensions", "ForwardDiff", "Test"]
