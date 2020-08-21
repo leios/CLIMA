@@ -72,9 +72,13 @@ end
 outname = "vtk_new_dt_" * gyre * "_" * advec
 
 function setup_model(FT, stommel, linear, τₒ, fₒ, β, γ, ν, Lˣ, Lʸ, H)
-    problem = HomogeneousBox{FT}(Lˣ, Lʸ, H, τₒ = τₒ,
-                                 BC = OceanBC(Impenetrable(NoSlip()),
-                                              Insulating()))
+    problem = HomogeneousBox{FT}(
+        Lˣ,
+        Lʸ,
+        H,
+        τₒ = τₒ,
+        BC = OceanBC(Impenetrable(NoSlip()), Insulating()),
+    )
 
 
     if stommel
@@ -218,8 +222,12 @@ let
             range(FT(0); length = Ne + 1, stop = Lˣ),
             range(FT(0); length = Ne + 1, stop = Lʸ),
         )
-        topl = BrickTopology(mpicomm, brickrange, periodicity = (false, false),
-                             boundary = ((1,1),(1,1)))
+        topl = BrickTopology(
+            mpicomm,
+            brickrange,
+            periodicity = (false, false),
+            boundary = ((1, 1), (1, 1)),
+        )
 
         for (j, N) in enumerate(orderrange)
             @info "running Ne $Ne and N $N with"
