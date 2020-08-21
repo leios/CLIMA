@@ -6,7 +6,7 @@ sets reflective ghost point
 """
 @inline function shallow_boundary_state!(
     ::NumericalFluxFirstOrder,
-    bc::Impenetrable{FreeSlip},
+    ::Impenetrable{FreeSlip},
     m::SWModel,
     ::TurbulenceClosure,
     q⁺,
@@ -15,6 +15,7 @@ sets reflective ghost point
     q⁻,
     a⁻,
     t,
+    args...,
 )
     q⁺.η = q⁻.η
 
@@ -106,6 +107,7 @@ sets reflective ghost point
     q⁻,
     α⁻,
     t,
+    args...,
 )
     q⁺.η = q⁻.η
     q⁺.U = -q⁻.U
