@@ -4,7 +4,7 @@ using StaticArrays
 using Test
 
 using ClimateMachine
-ClimateMachine.init()
+ClimateMachine.init(disable_gpu=true)
 using ClimateMachine.Atmos
 using ClimateMachine.Orientations
 using ClimateMachine.ConfigTypes
@@ -199,7 +199,7 @@ function run_brick_diagostics_fields_test()
             -sin.(pi * x ./ xmax) .* cos.(pi * y ./ ymax) .*
             sin.(pi * z ./ zmax) .* pi ./ zmax # ∂/∂z
 
-        Q.data[:, _ρ, 1:Nel] .= 1.0 .+ fcn0(x1, x2, x3, xmax, ymax, zmax) * 5.0
+        Q.data[:, _ρ, 1:Nel] .= 1.0
         Q.data[:, _ρu, 1:Nel] .=
             Q.data[:, _ρ, 1:Nel] .* fcn0(x1, x2, x3, xmax, ymax, zmax)
         Q.data[:, _ρv, 1:Nel] .=
@@ -207,10 +207,29 @@ function run_brick_diagostics_fields_test()
         Q.data[:, _ρw, 1:Nel] .=
             Q.data[:, _ρ, 1:Nel] .* fcn0(x1, x2, x3, xmax, ymax, zmax)
         #-----------------------------------------------------------------------
-        vgrad = Diagnostics.VectorGradients(dg, Q)
-        println(typeof(vgrad))
+        ind = [
+            varsindex(vars_state(model, Prognostic(), FT), :ρ)
+            varsindex(vars_state(model, Prognostic(), FT), :ρu)
+        ]
+        _ρ, _ρu, _ρv, _ρw = ind[1], ind[2], ind[3], ind[4]
+        Nq = N + 1
+        nrealelem = length(dg.grid.topology.realelems)
+
+        # TODO: cast onto proper vgad type for vorticity kernel
+	vgrad = similar(Q.realdata, Nq^3, nrealelem, 3, 3)
+        tmp1 = Diagnostics.VectorGradient(dg.grid, Q, _ρu)
+        tmp2 = Diagnostics.VectorGradient(dg.grid, Q, _ρv)
+        tmp3 = Diagnostics.VectorGradient(dg.grid, Q, _ρw)
+        println("sizes are:")
+        println(size(tmp1), '\n', size(tmp2), '\n', size(tmp3))
+        vgrad[:,:,:,1,:] .= tmp2
+        vgrad[:,:,:,2,:] .= tmp2
+        vgrad[:,:,:,3,:] .= tmp3
+        #vgrad[:,:,:,1,:] .= Diagnostics.VectorGradient(dg.grid, Q, _ρu)
+        #vgrad[:,:,:,2,:] .= Diagnostics.VectorGradient(dg.grid, Q, _ρv)
+        #vgrad[:,:,:,3,:] .= Diagnostics.VectorGradient(dg.grid, Q, _ρw)
         vort = Diagnostics.Vorticity(dg, vgrad)
-        #----------------------------------------------------------------------------
+        #-----------------------------------------------------------------------
         Ω₁_exact =
             fcny(x1, x2, x3, xmax, ymax, zmax) -
             fcnz(x1, x2, x3, xmax, ymax, zmax)
