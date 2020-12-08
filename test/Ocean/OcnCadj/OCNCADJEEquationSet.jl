@@ -176,8 +176,11 @@ end
   Compute diffusivity tensor times computed gradient to give net gradient flux.
 """
 function compute_gradient_flux!( e::eq_type, GF::Vars, G::Grad, Q::Vars, A::Vars, t )
+  # "Non-linear" form (for time stepped)
   κ¹,κ²,κ³=e.bl_prop.calc_kappa_diff(G.∇θ,A.npt,A.elnum,A.xc,A.yc,A.zc)
-  # κ¹=κ²=κ³=-0.1
+  # "Linear" form (for implicit)
+  κ¹,κ²,κ³=e.bl_prop.calc_kappa_diff(G.∇θⁱⁿⁱᵗ,A.npt,A.elnum,A.xc,A.yc,A.zc)
+  # Maybe I should pass both G.∇θ and G.∇θⁱⁿⁱᵗ?
   GF.κ∇θ = Diagonal([κ¹,κ²,κ³])*G.∇θ
   nothing
 end
