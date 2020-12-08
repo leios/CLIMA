@@ -68,11 +68,19 @@ function init_aux_geom(npt,elnum,x,y,z)
  return npt,elnum,x,y,z
 end
 
+"""
+  Compute and set diffusivity in each direction
+"""
+function calc_kappa_diff(∇θ,npt,elnum,x,y,z)
+  return -0.1, -0.1, -0.1
+end
+
 # Add customizations to properties
 bl_prop=OCNCADJEEquationSet.prop_defaults()
 bl_prop=(bl_prop...,init_aux_geom=init_aux_geom)
 bl_prop=(bl_prop...,   init_theta=init_theta   )
 bl_prop=(bl_prop..., source_theta=source_theta )
+bl_prop=(bl_prop..., calc_kappa_diff=calc_kappa_diff )
 
 # Create an equation set with the cutomized function and parameter properties
 oml=OCNCADJEEquations{Float64}(;bl_prop=bl_prop)
