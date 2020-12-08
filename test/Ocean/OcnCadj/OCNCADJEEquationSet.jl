@@ -210,6 +210,6 @@ function wavespeed(e::eq_type, _...)
 end
 
 # *** note to me - remember to add numerical_flux_second_order(CentralNumericalFluxSecondOrder) at 
-# interfaces, this is a term that averages flux⁺ and flux⁻.
+# interfaces, this is a term that averages flux⁺ and flux- (it may already be there?). 
 
 end
