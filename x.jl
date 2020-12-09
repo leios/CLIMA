@@ -23,7 +23,8 @@ brickrange=( xOrderedEdgeList, yOrderedEdgeList )
 topl = BrickTopology(
        mpicomm,
        brickrange;
-       periodicity=(true,true),
+       periodicity=(false,true),
+       boundary=((1,1),(1,1)),
 )
 
 Np=4
@@ -50,6 +51,9 @@ function init_theta(x::FT,y::FT,z::FT,n,e)
  xAmp=exp(  -( ( (x - xmid)/xDecayLength )^2 )  )
  yAmp=exp(  -( ( (y - ymid)/yDecayLength )^2 )  )
  yAmp=1.
+
+ yAmp=1.
+ xAmp=x   # Linear ramp
  return FT(xAmp*yAmp)
 end
 

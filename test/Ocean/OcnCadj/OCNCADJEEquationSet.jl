@@ -42,10 +42,13 @@ using ClimateMachine.Mesh.Geometry: LocalGeometry
 using ClimateMachine.MPIStateArrays
 
 using ClimateMachine.DGMethods.NumericalFluxes:
+      CentralNumericalFluxGradient,
+      CentralNumericalFluxSecondOrder,
       NumericalFluxSecondOrder,
-      CentralNumericalFluxSecondOrder
+      RusanovNumericalFlux
 
 import ClimateMachine.DGMethods.NumericalFluxes:
+       numerical_boundary_flux_second_order!,
        numerical_flux_second_order!
 
 
@@ -211,6 +214,15 @@ end
 """
   Zero normal gradient boundary condition
 """
+function boundary_state!(nF::Union{CentralNumericalFluxGradient}, bc, e::eq_type, Q⁺::Vars, A⁺::Vars,n,Q⁻::Vars,A⁻::Vars,t,_...)
+ Q⁺.θ=Q⁻.θ
+ nothing
+end
+
+function boundary_state!(nF::Union{RusanovNumericalFlux}, bc, e::eq_type, Q⁺::Vars, A⁺::Vars,n,Q⁻::Vars,A⁻::Vars,t,_...)
+ nothing
+end
+
 function boundary_state!(nF::Union{NumericalFluxSecondOrder}, bc, e::eq_type, Q⁺::Vars, GF⁺::Vars, A⁺::Vars,n,Q⁻::Vars,GF⁻::Vars,A⁻::Vars,t,_...)
  Q⁺.θ=Q⁻.θ
  GF⁺.κ∇θ= n⁻ * -0
@@ -218,7 +230,8 @@ function boundary_state!(nF::Union{NumericalFluxSecondOrder}, bc, e::eq_type, Q�
 end
 
 function wavespeed(e::eq_type, _...)
- # 1.
+ # Used in Rusanov term. 
+ # Only active if there is a flux first order term?
  e.bl_prop.get_wavespeed()
 end
 
@@ -260,5 +273,8 @@ function numerical_flux_second_order!(
     Fᵀn .-= tau * (parent(state⁻) - parent(state⁺))
     # println(parent(state⁻),parent(state⁺),(parent(state⁻) - parent(state⁺)) )
 end
+
+# We have zero gradient bc - so not flux through boundary
+numerical_boundary_flux_second_order!(nf::PenaltyNumFluxDiffusive, _...) = nothing
 
 end
