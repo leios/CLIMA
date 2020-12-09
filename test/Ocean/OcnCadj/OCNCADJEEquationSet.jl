@@ -16,6 +16,7 @@
 module OCNCADJEEquationSet
 
 export OCNCADJEEquations
+export PenaltyNumFluxDiffusive
 
 using ClimateMachine.BalanceLaws:
       Auxiliary,
@@ -41,7 +42,11 @@ using ClimateMachine.Mesh.Geometry: LocalGeometry
 using ClimateMachine.MPIStateArrays
 
 using ClimateMachine.DGMethods.NumericalFluxes:
-      NumericalFluxSecondOrder
+      NumericalFluxSecondOrder,
+      CentralNumericalFluxSecondOrder
+
+import ClimateMachine.DGMethods.NumericalFluxes:
+       numerical_flux_second_order!
 
 
 using  ClimateMachine.VariableTemplates
@@ -66,6 +71,8 @@ end
 
 eq_type=OCNCADJEEquations
 
+struct PenaltyNumFluxDiffusive <: NumericalFluxSecondOrder end
+
 """
   Set a default set of properties and their default values
 """
@@ -75,6 +82,7 @@ function prop_defaults()
   bl_prop=( bl_prop...,   init_theta=nothing)
   bl_prop=( bl_prop..., source_theta=nothing)
   bl_prop=( bl_prop..., calc_kappa_diff=nothing)
+  bl_prop=( bl_prop..., get_wavespeed=(0.) )
 end
 
 """
@@ -210,10 +218,47 @@ function boundary_state!(nF::Union{NumericalFluxSecondOrder}, bc, e::eq_type, Q�
 end
 
 function wavespeed(e::eq_type, _...)
- 0
+ # 1.
+ e.bl_prop.get_wavespeed()
 end
 
-# *** note to me - remember to add numerical_flux_second_order(CentralNumericalFluxSecondOrder) at 
-# interfaces, this is a term that averages flux⁺ and flux- (it may already be there?). 
+function numerical_flux_second_order!(
+    ::PenaltyNumFluxDiffusive,
+    bl::eq_type,
+    fluxᵀn::Vars{S},
+    n::SVector,
+    state⁻::Vars{S},
+    diff⁻::Vars{D},
+    hyperdiff⁻::Vars{HD},
+    aux⁻::Vars{A},
+    state⁺::Vars{S},
+    diff⁺::Vars{D},
+    hyperdiff⁺::Vars{HD},
+    aux⁺::Vars{A},
+    t,
+) where {S, HD, D, A}
+
+    numerical_flux_second_order!(
+        CentralNumericalFluxSecondOrder(),
+        bl,
+        fluxᵀn,
+        n,
+        state⁻,
+        diff⁻,
+        hyperdiff⁻,
+        aux⁻,
+        state⁺,
+        diff⁺,
+        hyperdiff⁺,
+        aux⁺,
+        t,
+    )
+
+    Fᵀn = parent(fluxᵀn)
+    FT = eltype(Fᵀn)
+    tau = FT(1)
+    Fᵀn .-= tau * (parent(state⁻) - parent(state⁺))
+    # println(parent(state⁻),parent(state⁺),(parent(state⁻) - parent(state⁺)) )
+end
 
 end
