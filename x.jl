@@ -23,8 +23,9 @@ brickrange=( xOrderedEdgeList, yOrderedEdgeList )
 topl = BrickTopology(
        mpicomm,
        brickrange;
-       periodicity=(false,true),
-       boundary=((1,1),(1,1)),
+       periodicity=(true,true),
+#      boundary=((1,1),(1,1)),
+       boundary=((0,0),(0,0)),
 )
 
 Np=4
@@ -52,8 +53,8 @@ function init_theta(x::FT,y::FT,z::FT,n,e)
  yAmp=exp(  -( ( (y - ymid)/yDecayLength )^2 )  )
  yAmp=1.
 
- yAmp=1.
- xAmp=x   # Linear ramp
+ # yAmp=1.
+ # xAmp=x   # Linear ramp
  return FT(xAmp*yAmp)
 end
 
@@ -88,11 +89,11 @@ end
 
 # Add customizations to properties
 bl_prop=OCNCADJEEquationSet.prop_defaults()
-bl_prop=(bl_prop...,init_aux_geom=init_aux_geom)
-bl_prop=(bl_prop...,   init_theta=init_theta   )
-bl_prop=(bl_prop..., source_theta=source_theta )
+bl_prop=(bl_prop...,   init_aux_geom=init_aux_geom)
+bl_prop=(bl_prop...,      init_theta=init_theta   )
+bl_prop=(bl_prop...,    source_theta=source_theta )
 bl_prop=(bl_prop..., calc_kappa_diff=calc_kappa_diff )
-bl_prop=(bl_prop..., get_wavespeed=get_wavespeed )
+bl_prop=(bl_prop...,   get_wavespeed=get_wavespeed )
 
 # Create an equation set with the cutomized function and parameter properties
 oml=OCNCADJEEquations{Float64}(;bl_prop=bl_prop)
@@ -100,8 +101,8 @@ oml=OCNCADJEEquations{Float64}(;bl_prop=bl_prop)
 # Instantiate a DG model with the customized equation set
 using ClimateMachine.DGMethods
 using ClimateMachine.DGMethods.NumericalFluxes
-# oml_dg = DGModel(oml,mgrid,RusanovNumericalFlux(),CentralNumericalFluxSecondOrder(),CentralNumericalFluxGradient())
-oml_dg = DGModel(oml,mgrid,RusanovNumericalFlux(),PenaltyNumFluxDiffusive(),CentralNumericalFluxGradient())
+oml_dg = DGModel(oml,mgrid,RusanovNumericalFlux(),CentralNumericalFluxSecondOrder(),CentralNumericalFluxGradient())
+# oml_dg = DGModel(oml,mgrid,RusanovNumericalFlux(),PenaltyNumFluxDiffusive(),CentralNumericalFluxGradient())
 oml_Q = init_ode_state(oml_dg, FT(0); init_on_cpu = true)
 dQ = init_ode_state(oml_dg, FT(0); init_on_cpu = true)
 
@@ -111,15 +112,22 @@ oml_dg(dQ,oml_Q, nothing, 0; increment=false)
 println(oml_Q.θ)
 println(dQ.θ)
 
-dt=(mgrid.vgeo[2,13,1])^2/0.1*0.5*0.20
-println("tic")
-for iter=1:100
-# println(iter)
-oml_Q.θ.=oml_Q.θ-dt.*dQ.θ
+θ_0=deepcopy(oml_Q.θ)
+
+M = view(mgrid.vgeo, :, mgrid.Mid, :)
+println( sum(sum(M.*oml_Q.θ[:,1,:],dims=1)./sum(M , dims = 1)) )
 
 # Make some plots
 using Plots
 using ClimateMachine.Mesh.Elements: interpolationmatrix
+
+dt=(mgrid.vgeo[2,13,1])^2/0.1*0.5*0.20
+println("tic")
+# anim = @animate
+anim = @animate for iter=1:100
+# println(iter)
+oml_Q.θ.=oml_Q.θ-dt.*dQ.θ
+
 nelem = size(dQ)[end]
 # fld=dQ.θ
 fld=oml_Q.θ
@@ -136,14 +144,20 @@ FT=eltype(fld)
 I1d = ntuple(i -> interpolationmatrix(ξ[dim - i + 1], ξdst), dim)
 I = kron(I1d...)
 global fldsp=I*fld[:,1,:]
+global fldsp2=I*θ_0[:,1,:]
 global X=ntuple(i -> I*mgrid.x_vtk[i], length(mgrid.x_vtk) )
 i=1;plot(reshape(X[1][:,i],(40,40))[:,20],reshape(fldsp[:,i],(40,40))[:,20] )
 i=2;plot!(reshape(X[1][:,i],(40,40))[:,20],reshape(fldsp[:,i],(40,40))[:,20] )
+i=2;plot!(reshape(X[1][:,i],(40,40))[:,20],reshape(fldsp2[:,i],(40,40))[:,20] )
 i=3;plot!(reshape(X[1][:,i],(40,40))[:,20],reshape(fldsp[:,i],(40,40))[:,20] )
 # scatter(X[1],X[2],fldsp,camera=(0,90),zcolor=fldsp,size=(1200,800),label="",markerstrokewidth=0,markershape=:rect)
 oml_dg(dQ,oml_Q, nothing, 0; increment=false);
 end
 println("toc")
+
+println( sum(sum(M.*oml_Q.θ[:,1,:],dims=1)./sum(M , dims = 1)) )
+
+gif(anim, "anim_fps15.gif", fps = 15)
 
 i=1;plot(reshape(X[1][:,i],(40,40))[:,20],reshape(fldsp[:,i],(40,40))[:,20] )
 i=2;plot!(reshape(X[1][:,i],(40,40))[:,20],reshape(fldsp[:,i],(40,40))[:,20] )

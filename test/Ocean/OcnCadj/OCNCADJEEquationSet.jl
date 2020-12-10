@@ -44,6 +44,7 @@ using ClimateMachine.MPIStateArrays
 using ClimateMachine.DGMethods.NumericalFluxes:
       CentralNumericalFluxGradient,
       CentralNumericalFluxSecondOrder,
+      NumericalFluxFirstOrder,
       NumericalFluxSecondOrder,
       RusanovNumericalFlux
 
@@ -74,10 +75,20 @@ end
 
 eq_type=OCNCADJEEquations
 
+"""
+  Extend the NumericalFluxSecondOrder to include a penalty term numerical
+  flux formulation.
+"""
 struct PenaltyNumFluxDiffusive <: NumericalFluxSecondOrder end
 
 """
   Set a default set of properties and their default values
+  - init_aux_geom   :: function to initialize geometric terms stored in aux.
+  - init_theta      :: function to set initial θ values.
+  - source_theta    :: function to add a source term to θ.
+  - calc_kappa_diff :: function to set diffusion coeffiecient(s).
+  - get_wavespeed   :: function to return a wavespeed for Rusanov computations (there aren't any in this model)
+  - get_penalty_tau :: function to set timescale on which to bring state+ and state- together
 """
 function prop_defaults()
   bl_prop=NamedTuple()
@@ -86,6 +97,7 @@ function prop_defaults()
   bl_prop=( bl_prop..., source_theta=nothing)
   bl_prop=( bl_prop..., calc_kappa_diff=nothing)
   bl_prop=( bl_prop..., get_wavespeed=(0.) )
+  bl_prop=( bl_prop..., get_penalty_tau=(1.) )
 end
 
 """
@@ -205,10 +217,10 @@ function flux_second_order!( e::eq_type, F::Grad, Q::Vars, GF::Vars, H::Vars, A:
 end
 
 """
-  Not sure if I have to have this to trigger boundary_state! call - possibly, need to check
+  Define boundary condition flags/types to iterate over
 """
 function boundary_conditions( e::eq_type, _...)
- ( nothing, )
+ ( 1, )
 end
 
 """
@@ -219,7 +231,13 @@ function boundary_state!(nF::Union{CentralNumericalFluxGradient}, bc, e::eq_type
  nothing
 end
 
-function boundary_state!(nF::Union{RusanovNumericalFlux}, bc, e::eq_type, Q⁺::Vars, A⁺::Vars,n,Q⁻::Vars,A⁻::Vars,t,_...)
+"""
+  Set any first order numerical flux to null
+  NumericalFluxFirstOrder is an abstract type that currently generalizes
+  RusanovNumericalFlux, CentralNumericalFluxFirstOrder, RoeNumericalFlux, HLLCNumericalFlux.
+"""
+# No first order fluxes so numerical flux needed. NumericalFluxFirstOrder
+function boundary_state!(nF::NumericalFluxFirstOrder, bc, e::eq_type, Q⁺::Vars, A⁺::Vars,n,Q⁻::Vars,A⁻::Vars,t,_...)
  nothing
 end
 
@@ -235,6 +253,12 @@ function wavespeed(e::eq_type, _...)
  e.bl_prop.get_wavespeed()
 end
 
+"""
+  Penalty flux formulation of second order numerical flux. This formulation
+  computes the CentralNumericalFluxSecondOrder term first (which is just the average
+  of the + and - fluxes and an edge), and then adds a "penalty" flux that relaxes 
+  the edge state + and - toward each other.
+"""
 function numerical_flux_second_order!(
     ::PenaltyNumFluxDiffusive,
     bl::eq_type,
@@ -269,12 +293,12 @@ function numerical_flux_second_order!(
 
     Fᵀn = parent(fluxᵀn)
     FT = eltype(Fᵀn)
-    tau = FT(1)
+    tau = e.bl_prop.get_penalty_tau()
     Fᵀn .-= tau * (parent(state⁻) - parent(state⁺))
-    # println(parent(state⁻),parent(state⁺),(parent(state⁻) - parent(state⁺)) )
 end
 
-# We have zero gradient bc - so not flux through boundary
+# We are assuming zero gradient bc for now - so there is no numerical second order 
+# flux from boundary
 numerical_boundary_flux_second_order!(nf::PenaltyNumFluxDiffusive, _...) = nothing
 
 end
