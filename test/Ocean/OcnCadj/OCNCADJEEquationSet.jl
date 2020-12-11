@@ -204,7 +204,7 @@ function compute_gradient_flux!( e::eq_type, GF::Vars, G::Grad, Q::Vars, A::Vars
   # "Linear" form (for implicit)
   κ¹,κ²,κ³=e.bl_prop.calc_kappa_diff(G.∇θⁱⁿⁱᵗ,A.npt,A.elnum,A.xc,A.yc,A.zc)
   # Maybe I should pass both G.∇θ and G.∇θⁱⁿⁱᵗ?
-  GF.κ∇θ = Diagonal([κ¹,κ²,κ³])*G.∇θ
+  GF.κ∇θ = Diagonal(@SVector([κ¹,κ²,κ³]))*G.∇θ
   nothing
 end
 
@@ -241,7 +241,7 @@ function boundary_state!(nF::NumericalFluxFirstOrder, bc, e::eq_type, Q⁺::Vars
  nothing
 end
 
-function boundary_state!(nF::Union{NumericalFluxSecondOrder}, bc, e::eq_type, Q⁺::Vars, GF⁺::Vars, A⁺::Vars,n,Q⁻::Vars,GF⁻::Vars,A⁻::Vars,t,_...)
+function boundary_state!(nF::Union{NumericalFluxSecondOrder}, bc, e::eq_type, Q⁺::Vars, GF⁺::Vars, A⁺::Vars,n⁻,Q⁻::Vars,GF⁻::Vars,A⁻::Vars,t,_...)
  Q⁺.θ=Q⁻.θ
  GF⁺.κ∇θ= n⁻ * -0
  nothing

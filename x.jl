@@ -79,7 +79,7 @@ end
   Compute and set diffusivity in each direction
 """
 function calc_kappa_diff(∇θ,npt,elnum,x,y,z)
-  return +0.1, +0.1, +0.1
+	return +0.1, +0.1, +0.1
   # return -0., -0., -0.
 end
 
@@ -96,7 +96,7 @@ bl_prop=(bl_prop..., calc_kappa_diff=calc_kappa_diff )
 bl_prop=(bl_prop...,   get_wavespeed=get_wavespeed )
 
 # Create an equation set with the cutomized function and parameter properties
-oml=OCNCADJEEquations{Float64}(;bl_prop=bl_prop)
+oml=OCNCADJEEquationSet.OCNCADJEEquations{Float64}(;bl_prop=bl_prop)
 
 # Instantiate a DG model with the customized equation set
 using ClimateMachine.DGMethods
